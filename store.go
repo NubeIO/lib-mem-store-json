@@ -3,8 +3,8 @@ package storage
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
+	"path"
 )
 
 type store map[string]interface{}
@@ -51,17 +51,28 @@ func (inst *storageInst) WriteToDisk() error {
 	if err != nil {
 		return fmt.Errorf("db error writting to file: %w", err)
 	}
-	ioutil.WriteFile(inst.Filename, raw, 0644)
-	return nil
+
+	// Create and write temporary file
+	tempFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s_%s", path.Ext(inst.Filename)))
+	if err != nil {
+		return fmt.Errorf("db error writting to file: %w", err)
+	}
+	defer os.Remove(tempFile.Name())
+	if _, err := tempFile.Write(raw); err != nil {
+		tempFile.Close()
+		return fmt.Errorf("db error writting to file: %w", err)
+	}
+
+	return os.Rename(tempFile.Name(), inst.Filename)
 }
 
 // ReadFromDisk Read in storage from disk
 func (inst *storageInst) ReadFromDisk() error {
-	fileContent, err := ioutil.ReadFile(inst.Filename)
+	fileContent, err := os.ReadFile(inst.Filename)
 
 	if err != nil {
 		if os.IsNotExist(err) {
-			err = ioutil.WriteFile(inst.Filename, []byte{}, 0644)
+			err = os.WriteFile(inst.Filename, []byte{}, 0644)
 			if err != nil {
 				return fmt.Errorf("db error creating file: %w", err)
 			}
