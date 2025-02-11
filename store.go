@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path"
 )
 
 type store map[string]interface{}
@@ -53,7 +52,7 @@ func (inst *storageInst) WriteToDisk() error {
 	}
 
 	// Create and write temporary file
-	tempFile, err := os.CreateTemp(os.TempDir(), fmt.Sprintf("%s_%s", path.Ext(inst.Filename)))
+	tempFile, err := os.CreateTemp(os.TempDir(), "")
 	if err != nil {
 		return fmt.Errorf("db error writting to file: %w", err)
 	}
