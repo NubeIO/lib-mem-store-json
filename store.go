@@ -17,14 +17,19 @@ type StorageHandler interface {
 type storageInst struct {
 	StorageMap store
 	Filename   string
+	TempDir    string
 	RawData    map[string]json.RawMessage
 }
 
 // NewStorage Create a new StorageHandler with the absolute path filename as the disk backup location
-func NewStorage(filename string) StorageHandler {
+func NewStorage(filename, tempDir string) StorageHandler {
+	if tempDir == "" {
+		tempDir = os.TempDir()
+	}
 	return &storageInst{
 		StorageMap: make(store),
 		Filename:   filename,
+		TempDir:    tempDir,
 		RawData:    make(map[string]json.RawMessage),
 	}
 }
@@ -52,7 +57,7 @@ func (inst *storageInst) WriteToDisk() error {
 	}
 
 	// Create and write temporary file
-	tempFile, err := os.CreateTemp(os.TempDir(), "")
+	tempFile, err := os.CreateTemp(inst.TempDir, "")
 	if err != nil {
 		return fmt.Errorf("db error writting to file: %w", err)
 	}
